@@ -1,4 +1,129 @@
-import type { Bill, Person, PersonBalance, Settlement } from './types';
+import type { AppState, Bill, Person, PersonBalance, Settlement } from './types';
+import JSONCrush from 'jsoncrush';
+
+// ─── URL State Encoding (JSONCrush + Base64URL) ───────────────────────────
+//
+// 1. JSONCrush compresses repeated substrings in the JSON (keys, IDs, etc.).
+// 2. Base64URL converts the crushed string strictly into [A-Za-z0-9_-].
+//    This guarantees NO characters like ' ( ) ! ~ * that trigger Markdown
+//    or URL truncation in messaging apps (WhatsApp, Telegram, Instagram).
+//
+
+/**
+ * Convert string (UTF-8) to Base64URL string [A-Za-z0-9_-].
+ */
+export function toBase64Url(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, chunk as unknown as number[]);
+  }
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+/**
+ * Convert Base64URL string back to decoded string.
+ */
+export function fromBase64Url(base64url: string): string {
+  const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = base64 + '=='.slice(0, (4 - (base64.length % 4)) % 4);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+/**
+ * Encode AppState to a compressed, strictly Base64URL-safe string.
+ */
+export function encodeState(state: AppState): string {
+  const json = JSON.stringify(state);
+  const crushed = JSONCrush.crush(json);
+  return toBase64Url(crushed);
+}
+
+/**
+ * Decode an encoded string back to AppState.
+ * Supports:
+ * - Tier 1: Current format (Base64URL -> JSONCrush uncrush -> JSON.parse)
+ * - Tier 2: Legacy raw Base64URL (Base64URL -> JSON.parse)
+ * - Tier 3: Raw JSONCrush with URI encoding (JSONCrush uncrush -> JSON.parse)
+ */
+export function decodeState(encoded: string): AppState | null {
+  // Tier 1 & 2: Base64URL decodable
+  try {
+    const text = fromBase64Url(encoded);
+    // Try uncrush first
+    try {
+      const uncrushed = JSONCrush.uncrush(text);
+      const parsed = JSON.parse(uncrushed) as AppState;
+      if (validateState(parsed)) return parsed;
+    } catch {
+      // not crushed
+    }
+    // Try raw JSON parse
+    try {
+      const parsed = JSON.parse(text) as AppState;
+      if (validateState(parsed)) return parsed;
+    } catch {
+      // not raw JSON
+    }
+  } catch {
+    // not base64url
+  }
+
+  // Tier 3: Raw JSONCrush (supports URI-encoded or unencoded)
+  try {
+    const uncrushed = JSONCrush.uncrush(decodeURIComponent(encoded));
+    const parsed = JSON.parse(uncrushed) as AppState;
+    if (validateState(parsed)) return parsed;
+  } catch {
+    // ignore
+  }
+
+  try {
+    const uncrushed = JSONCrush.uncrush(encoded);
+    const parsed = JSON.parse(uncrushed) as AppState;
+    if (validateState(parsed)) return parsed;
+  } catch {
+    // ignore
+  }
+
+  return null;
+}
+
+/**
+ * Basic schema validation for decoded state.
+ */
+function validateState(state: unknown): state is AppState {
+  const s = state as AppState;
+  return (
+    s != null &&
+    Array.isArray(s.people) &&
+    Array.isArray(s.bills) &&
+    s.people.every((p) => typeof p.id === 'string' && typeof p.name === 'string')
+  );
+}
+
+/**
+ * Build a shareable URL from the current state.
+ * Uses path param: /s/{base64url}
+ */
+export function buildShareUrl(state: AppState): string {
+  const encoded = encodeState(state);
+  const url = new URL(window.location.href);
+  url.search = '';
+  url.hash = '';
+  url.pathname = '/s/' + encoded;
+  return url.toString();
+}
 
 // Format currency in Indonesian Rupiah format
 export function formatCurrency(amount: number): string {
