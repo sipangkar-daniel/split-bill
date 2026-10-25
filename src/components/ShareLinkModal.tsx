@@ -51,7 +51,7 @@ export function ShareLinkModal({
   }
 
   async function handleCopyAll() {
-    const text = settlementToText(settlements);
+    const text = settlementToText(settlements, url);
     await navigator.clipboard.writeText(text);
     setCopiedAll(true);
     setTimeout(() => setCopiedAll(false), 2500);
