@@ -8,7 +8,7 @@ const STORAGE_KEY = 'splitbill_state_v1';
 function loadState(): AppState {
   // 1. Check URL path /s/{data} first (shared link)
   try {
-    const pathMatch = window.location.pathname.match(/^\/s\/(.+)$/);
+    const pathMatch = window.location.pathname.match(/^\/s\/(.+?)\/?$/);
     const encoded = pathMatch
       ? decodeURIComponent(pathMatch[1])
       : new URLSearchParams(window.location.search).get('data'); // legacy ?data= fallback
