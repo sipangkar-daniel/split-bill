@@ -237,10 +237,14 @@ export function generateId(): string {
 }
 
 // Format settlement as plain text
-export function settlementToText(settlements: Settlement[]): string {
+export function settlementToText(settlements: Settlement[], shareUrl?: string): string {
   if (settlements.length === 0) return 'Everyone is settled! 🎉';
   const lines = settlements.map(
     (s) => `${s.from.name} → ${s.to.name}: ${formatCurrency(s.amount)}`
   );
-  return `Split Bill Settlement\n\n${lines.join('\n')}`;
+  let text = `Split Bill Settlement\n\n${lines.join('\n')}`;
+  if (shareUrl) {
+    text += `\n\nDetail : \n${shareUrl}`;
+  }
+  return text;
 }
