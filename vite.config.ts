@@ -13,7 +13,7 @@ function spaFallback(): Plugin {
       // Return a function so it runs AFTER Vite's internal middleware
       // but BEFORE the final 404 handler
       return () => {
-        server.middlewares.use((req, res, next) => {
+        server.middlewares.use((req, _res, next) => {
           if (req.url && req.url.startsWith('/s/')) {
             req.url = '/index.html';
           }

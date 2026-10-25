@@ -1,6 +1,13 @@
 import type {AppState} from './types';
 
 export const INITIAL_DATA: AppState = (() => {
+  if (!import.meta.env.DEV) {
+    return {
+      people: [],
+      bills: [],
+    };
+  }
+
   return {
     people: [
       { id: 'p1', name: 'Andi' },
