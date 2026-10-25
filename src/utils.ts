@@ -68,14 +68,14 @@ function validateState(state: unknown): state is AppState {
 
 /**
  * Build a shareable URL from the current state.
- * Uses JSONCrush for compact encoding.
+ * Uses path param: /s/{crushed}
  */
 export function buildShareUrl(state: AppState): string {
   const crushed = encodeState(state);
   const url = new URL(window.location.href);
   url.search = '';
   url.hash = '';
-  url.searchParams.set('data', crushed);
+  url.pathname = '/s/' + encodeURIComponent(crushed);
   return url.toString();
 }
 

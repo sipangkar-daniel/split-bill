@@ -6,16 +6,18 @@ import { generateId, decodeState } from '../utils';
 const STORAGE_KEY = 'splitbill_state_v1';
 
 function loadState(): AppState {
-  // 1. Check URL ?data= param first (shared link)
+  // 1. Check URL path /s/{data} first (shared link)
   try {
-    const params = new URLSearchParams(window.location.search);
-    const encoded = params.get('data');
+    const pathMatch = window.location.pathname.match(/^\/s\/(.+)$/);
+    const encoded = pathMatch
+      ? decodeURIComponent(pathMatch[1])
+      : new URLSearchParams(window.location.search).get('data'); // legacy ?data= fallback
+
     if (encoded) {
       const decoded = decodeState(encoded);
       if (decoded) {
         // Clean the URL without reloading the page
-        const cleanUrl = window.location.pathname;
-        window.history.replaceState({}, '', cleanUrl);
+        window.history.replaceState({}, '', '/');
         return decoded;
       }
     }
