@@ -42,7 +42,7 @@ export default function App() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {/* Mobile subtitle */}
         <p className="text-sm text-gray-400 mb-6 sm:hidden text-center">
-          Bagi tagihan dengan mudah dan tahu siapa harus bayar siapa.
+          Bagi tagihan dengan mudah
         </p>
 
         {/* Two-column layout on desktop */}
@@ -69,6 +69,7 @@ export default function App() {
             <Summary balances={balances} totalBill={totalBill} />
             <Settlement
               settlements={settlements}
+              state={state}
               onShareImage={handleShareImage}
               shareStatus={shareStatus}
               errorMsg={shareErrorMsg}

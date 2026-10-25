@@ -14,9 +14,9 @@ export function Header({ onReset, onStartTour }: HeaderProps) {
             <Receipt className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 leading-tight">SplitBill</h1>
+            <h1 className="text-xl font-bold text-gray-900 leading-tight">SPLIT BILL</h1>
             <p className="text-xs text-gray-500 hidden sm:block">
-              Bagi tagihan dengan mudah dan tahu siapa harus bayar siapa.
+              Bagi tagihan dengan mudah.
             </p>
           </div>
         </div>

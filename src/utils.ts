@@ -1,4 +1,59 @@
-import type { Bill, Person, PersonBalance, Settlement } from './types';
+import type { AppState, Bill, Person, PersonBalance, Settlement } from './types';
+
+// ─── URL State Encoding ────────────────────────────────────────────────────
+
+/**
+ * Encode AppState to a URL-safe base64 string.
+ * Uses JSON → UTF-8 bytes → base64url to handle Unicode names safely.
+ */
+export function encodeState(state: AppState): string {
+  const json = JSON.stringify(state);
+  // UTF-8 encode to handle non-ASCII characters (e.g. Indonesian names)
+  const bytes = new TextEncoder().encode(json);
+  let binary = '';
+  bytes.forEach((b) => (binary += String.fromCharCode(b)));
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/**
+ * Decode a base64url string back to AppState.
+ * Returns null if the string is invalid or malformed.
+ */
+export function decodeState(encoded: string): AppState | null {
+  try {
+    // Restore standard base64 padding and characters
+    const base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '=='.slice(0, (4 - (base64.length % 4)) % 4);
+    const binary = atob(padded);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const json = new TextDecoder().decode(bytes);
+    const parsed = JSON.parse(json) as AppState;
+    // Basic schema validation
+    if (
+      Array.isArray(parsed.people) &&
+      Array.isArray(parsed.bills) &&
+      parsed.people.every((p) => typeof p.id === 'string' && typeof p.name === 'string')
+    ) {
+      return parsed;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Build a shareable URL from the current state.
+ */
+export function buildShareUrl(state: AppState): string {
+  const encoded = encodeState(state);
+  const url = new URL(window.location.href);
+  url.search = '';
+  url.hash = '';
+  url.searchParams.set('data', encoded);
+  return url.toString();
+}
 
 // Format currency in Indonesian Rupiah format
 export function formatCurrency(amount: number): string {

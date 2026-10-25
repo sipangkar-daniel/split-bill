@@ -1,21 +1,40 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { AppState, Bill, Person } from '../types';
 import { INITIAL_DATA } from '../initialData';
-import { generateId } from '../utils';
+import { generateId, decodeState } from '../utils';
 
 const STORAGE_KEY = 'splitbill_state_v1';
 
 function loadState(): AppState {
+  // 1. Check URL ?data= param first (shared link)
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get('data');
+    if (encoded) {
+      const decoded = decodeState(encoded);
+      if (decoded) {
+        // Clean the URL without reloading the page
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, '', cleanUrl);
+        return decoded;
+      }
+    }
+  } catch {
+    // ignore URL parsing errors
+  }
+
+  // 2. Fall back to localStorage
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as AppState;
-      // Basic validation
       if (parsed.people && parsed.bills) return parsed;
     }
   } catch {
     // ignore
   }
+
+  // 3. Fall back to initial example data
   return INITIAL_DATA;
 }
 
